@@ -13,22 +13,21 @@ getData(URL) ->
 	inets:start(),
 	{_, { _, _, Data}} = httpc:request(URL),
         DataTree = mochiweb_html:parse(Data),
-        ATags = getTags(<<"a">>, DataTree),
-        ImgTags = getTags(<<"img">>, DataTree),
+        ATags = lists:flatten(filterTags(<<"a">>, DataTree)),
+        ImgTags = lists:flatten(filterTags(<<"img">>, DataTree)),
         Links = [ V || {P, V} <- ATags, P == <<"href">>],
 	Images = [ V || {P, V} <- ImgTags, P == <<"src">>],
 	{Links, Images}.
 
 
 getChildrenTags(Tag, Children) ->
-        lists:flatten(lists:map(fun (Child) -> getTags(Tag, Child) end,
-                                Children)).
+        lists:map(fun (Child) -> filterTags(Tag, Child) end, Children).
 
-getTags(Tag, {_DataTag, Properties, Children}) when Tag =:= _DataTag ->
+filterTags(Tag, {_DataTag, Properties, Children}) when Tag =:= _DataTag ->
         [Properties | getChildrenTags(Tag, Children)];
 
-getTags(Tag, {_DataTag, _Properties, Children}) when Tag =/= _DataTag ->
+filterTags(Tag, {_DataTag, _Properties, Children}) when Tag =/= _DataTag ->
         getChildrenTags(Tag, Children);
 
-getTags(_Tag, _) ->
+filterTags(_Tag, _) ->
         [].
